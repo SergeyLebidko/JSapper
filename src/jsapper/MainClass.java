@@ -3,9 +3,10 @@ package jsapper;
 import javax.swing.*;
 import java.awt.*;
 
-public class MainClass {
+public class MainClass{
 
     private JFrame frm;                                       //Окно
+
     private int W;                                            //Щирина окна (в пикселях)
     private int H;                                            //Высота окна (в пикселях)
     private int wCellCount=20;                                //Ширина окна (в клетках)
@@ -16,12 +17,15 @@ public class MainClass {
     private int cellH=48;                                     //Высота клетки (в пикселях)
     private int correctionW=6;                                //Горизонтальная поправка высоты окна
     private int correctionH=29;                               //Вертикальная поправка высоты окна
-    private Cell[][] cells;                                   //Массив Клеток
+
+    private Cell[][] cells;                                   //Массив Клеток, которые будут отображаться на экране
+    private int[][] field;                                    //Модель игрового поля в программе
+
     private Color backWindowColor =Color.WHITE;               //Цвет фона окна
     private Color borderCellColor=new Color(50,50,50); //Цвет границы ячеек
 
+    //Формируем главное окно программы и выставляем его по центру экрана
     public MainClass() {
-        //Формируем окно и выставляем его по центру экрана
         frm = new JFrame("JSapper");
         frm.setLayout(null);
         frm.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -29,17 +33,21 @@ public class MainClass {
         W=wCellCount*(borderW+cellW+borderW)+correctionW;
         H=hCellCount*(borderH+cellH+borderH)+correctionH;
         frm.setSize(W, H);
-        int xPos= (int)(Toolkit.getDefaultToolkit().getScreenSize().getWidth()/2-W/2);
-        int yPos= (int)(Toolkit.getDefaultToolkit().getScreenSize().getHeight()/2-H/2);
+        int xPos=(int)(Toolkit.getDefaultToolkit().getScreenSize().getWidth()/2-W/2);
+        int yPos=(int)(Toolkit.getDefaultToolkit().getScreenSize().getHeight()/2-H/2);
         frm.setLocation(xPos, yPos);
         frm.setResizable(false);
         frm.setVisible(true);
+    }
 
-        //Формируем массив клеток и добавляем их на форму
+    //Формируем массив клеток и добавляем их на главное окно. Очищаем моедль игрового поля
+    public void gameInit(){
         cells=new Cell[hCellCount][wCellCount];
+        field=new int[hCellCount][wCellCount];
         for(int i=0;i<hCellCount;i++)
             for(int j=0;j<wCellCount;j++){
-                cells[i][j]=new Cell();
+                field[i][j]=0;
+                cells[i][j]=new Cell(j,i,Cell.HIDE_CELL);
                 cells[i][j].setBounds(j*(borderW+cellW+borderW)+borderW,i*(borderH+cellH+borderH)+borderH,cellW,cellH);
                 cells[i][j].setBorder(BorderFactory.createLineBorder(borderCellColor));
                 frm.add(cells[i][j]);
@@ -50,7 +58,9 @@ public class MainClass {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                new MainClass();
+                MainClass m;
+                m=new MainClass();
+                m.gameInit();
             }
         });
     }
