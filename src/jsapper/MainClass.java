@@ -22,7 +22,7 @@ public class MainClass{
     private int[][] field;                                    //Модель игрового поля в программе
 
     private Color backWindowColor =Color.WHITE;               //Цвет фона окна
-    private Color borderCellColor=new Color(50,50,50); //Цвет границы ячеек
+
 
     //Формируем главное окно программы и выставляем его по центру экрана
     public MainClass() {
@@ -42,14 +42,21 @@ public class MainClass{
 
     //Формируем массив клеток и добавляем их на главное окно. Очищаем моедль игрового поля
     public void gameInit(){
+
+        int valTmp=0;
+
         cells=new Cell[hCellCount][wCellCount];
         field=new int[hCellCount][wCellCount];
         for(int i=0;i<hCellCount;i++)
             for(int j=0;j<wCellCount;j++){
                 field[i][j]=0;
-                cells[i][j]=new Cell(j,i,Cell.HIDE_CELL);
+                cells[i][j]=new Cell(j,i,valTmp);
+
+                valTmp++;
+                if(valTmp==10)valTmp=0;
+
                 cells[i][j].setBounds(j*(borderW+cellW+borderW)+borderW,i*(borderH+cellH+borderH)+borderH,cellW,cellH);
-                cells[i][j].setBorder(BorderFactory.createLineBorder(borderCellColor));
+
                 frm.add(cells[i][j]);
             }
     }
