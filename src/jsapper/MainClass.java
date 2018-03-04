@@ -5,24 +5,23 @@ import java.awt.*;
 
 public class MainClass{
 
+    //Блок полей, постоянных для всех игровых сессий
     private JFrame frm;                                       //Окно
-
-    private int W;                                            //Щирина окна (в пикселях)
-    private int H;                                            //Высота окна (в пикселях)
-    private int wCellCount=20;                                //Ширина окна (в клетках)
-    private int hCellCount=15;                                //Высота окна (в клетках)
+    private Color backWindowColor =Color.WHITE;               //Цвет фона окна
     private int borderW=2;                                    //Горизонтальный отступ (в пикселях)
     private int borderH=2;                                    //Вертикальный отступ (в пикселях)
-    private int cellW=48;                                     //Ширина клетки (в пикселях)
-    private int cellH=48;                                     //Высота клетки (в пикселях)
+    private int cellW=32;                                     //Ширина клетки (в пикселях)
+    private int cellH=32;                                     //Высота клетки (в пикселях)
     private int correctionW=6;                                //Горизонтальная поправка высоты окна
     private int correctionH=29;                               //Вертикальная поправка высоты окна
 
-    private Cell[][] cells;                                   //Массив Клеток, которые будут отображаться на экране
+    //Блок полей-параметров текущей игровой сессии
+    private int W;                                            //Щирина окна (в пикселях)
+    private int H;                                            //Высота окна (в пикселях)
+    private int wCellCount=20;                                //Ширина окна (в клетках) для текущей игры
+    private int hCellCount=15;                                //Высота окна (в клетках) для текущей игры
+    private Cell[][] cells;                                   //Массив клеток, которые будут отображаться на экране
     private int[][] field;                                    //Модель игрового поля в программе
-
-    private Color backWindowColor =Color.WHITE;               //Цвет фона окна
-
 
     //Формируем главное окно программы и выставляем его по центру экрана
     public MainClass() {
@@ -40,26 +39,26 @@ public class MainClass{
         frm.setVisible(true);
     }
 
-    //Формируем массив клеток и добавляем их на главное окно. Очищаем моедль игрового поля
-    public void gameInit(){
-
-        int valTmp=0;
-
+    //Метод готовит новую игру
+    public void gamedInit(){
+        //Вначале очищаем старое поле. Предполагаем, что оно может иметь размер, отличный от текущего
+        if(cells!=null){
+            for(int i=0;i<cells.length;i++)
+                for(int j=0;j<cells[i].length;j++)frm.remove(cells[i][j]);
+        }
+        //Теперь формируем новое игровое поле. Перед первым ходом на нем нет мин
         cells=new Cell[hCellCount][wCellCount];
         field=new int[hCellCount][wCellCount];
         for(int i=0;i<hCellCount;i++)
             for(int j=0;j<wCellCount;j++){
                 field[i][j]=0;
-                cells[i][j]=new Cell(j,i,valTmp);
-
-                valTmp++;
-                if(valTmp==10)valTmp=0;
-
+                cells[i][j]=new Cell(j,i,Cell.HIDE_CELL);
                 cells[i][j].setBounds(j*(borderW+cellW+borderW)+borderW,i*(borderH+cellH+borderH)+borderH,cellW,cellH);
-
                 frm.add(cells[i][j]);
             }
     }
+
+
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -67,7 +66,7 @@ public class MainClass{
             public void run() {
                 MainClass m;
                 m=new MainClass();
-                m.gameInit();
+                m.gamedInit();
             }
         });
     }

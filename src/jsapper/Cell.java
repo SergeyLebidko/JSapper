@@ -29,9 +29,18 @@ public class Cell extends JPanel{
         setBorder(BorderFactory.createLineBorder(borderColor));
     }
 
+    //Метод устанавливает содержимое ячейки. В зависимости от него - меняется вид ячейки на экране
     public void setValue(int value){
         this.value=value;
         repaint();
+    }
+
+    public int getXCell() {
+        return x;
+    }
+
+    public int getYCell() {
+        return y;
     }
 
     //Метод отрисовывает содержимое клетки
@@ -69,12 +78,10 @@ public class Cell extends JPanel{
             g2.fillRect(0,0, w, h);
             g2.setColor(bombColor);
             g2.fillOval((int)(w*0.2),(int)(h*0.2),(int)(w*0.6),(int)(h*0.6));
-
             double r=w*0.4;
             double d=360.0/16.0;
             double x0=w/2;
             double y0=h/2;
-
             double[] x=new double[16];
             double[] y=new double[16];
             double a;
@@ -85,7 +92,6 @@ public class Cell extends JPanel{
             }
             int[] xp=new int[4];
             int[] yp=new int[4];
-
             for(int j=0;j<7;j+=2){
                 xp[0]=(int)x[j];
                 yp[0]=(int)y[j];
@@ -97,10 +103,8 @@ public class Cell extends JPanel{
                 yp[3]=(int)y[j+9];
                 g2.fillPolygon(xp,yp,4);
             }
-
             return;
         }
-
     }
 
 }
