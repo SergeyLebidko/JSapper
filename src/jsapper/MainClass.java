@@ -1,10 +1,10 @@
 package jsapper;
 
-import javax.sound.midi.Soundbank;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Random;
 
 public class MainClass{
 
@@ -17,6 +17,7 @@ public class MainClass{
     private final int cellH=36;                                     //Высота клетки (в пикселях)
     private final int correctionW=6;                                //Горизонтальная поправка высоты окна
     private final int correctionH=29;                               //Вертикальная поправка высоты окна
+    private final int BOMB=9;
 
     //Перечисление уровней сложности
     private enum Difficult{
@@ -81,8 +82,15 @@ public class MainClass{
                 return;
             }
 
-            //Узнаем координаты ячейки, в которую кликнул игрок
-            Cell c=(Cell)(e.getSource());
+            //Если нажата левая кнопка мышки
+            if(e.getButton()==1){
+                //Узнаем координаты ячейки, в которую кликнул игрок
+                Cell c=(Cell)(e.getSource());
+                int x=c.getXCell();
+                int y=c.getYCell();
+
+            }
+
         }
     };
 
@@ -97,7 +105,7 @@ public class MainClass{
     }
 
     //Метод готовит новую игру в зависимости от выбранного уровня сложности
-    public void gamedInit(Difficult diff){
+    private void gamedInit(Difficult diff){
         if(currentDiff!=diff){
             //Очищаем старое игровое поле
             if(cells!=null){
@@ -153,6 +161,42 @@ public class MainClass{
             }
 
         currentDiff=diff;
+    }
+
+    //Метод расставляет бомбы и подсчитывает количество бомб по соседству рядом с клетками, в которых самих бомб нет.
+    //Можно поставить бомбы во все ячейки, кроме ячейки x0,y0
+    private void makeField(int x0, int y0){
+        int x;
+        int y;
+        //Сперва расставляем бомбы
+        Random rnd=new Random();
+        for(int i=0;i<bombCount;i++){
+            do{
+                x=rnd.nextInt(wCellCount);
+                y=rnd.nextInt(hCellCount);
+            }while (((x==x0) & (y==y0)) | (field[y0][x0]==BOMB));
+            field[y0][x0]=BOMB;
+        }
+        //Теперь подсчитываем количество ячеек с бомбами для каждой пустой ячейки
+        for(int i=0;i<hCellCount;i++)
+            for(int j=0;j<wCellCount;j++){
+                if(field[i][j]==BOMB)continue;
+                for(int dx=-1;dx<2;dx++){
+                    for(int dy=-1;dy<2;dy++){
+                        if((dx==0) & (dy==0))continue;
+                        x=j+dx;
+                        y=i+dy;
+                        if((x<0) || (x>=wCellCount) || (y<0) || (y>=hCellCount))continue;
+                        if(field[y][x]==BOMB)continue;
+                        if(field[y][x]==BOMB)field[i][j]++;
+                    }
+                }
+            }
+    }
+
+    //Метод открывает все пустые ячейки, начиная ячейки с координатами x0,y0
+    private void openVoidCells(int x0, int y0){
+
     }
 
     public static void main(String[] args) {
