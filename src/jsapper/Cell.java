@@ -5,9 +5,11 @@ import java.awt.*;
 
 public class Cell extends JPanel{
 
+    //Предопределенные значения для правил отображения ячеек. Значения в интервале 1..8 отображается как соответствующее число
     public static final int HIDE_CELL=-1;   //Ячейка отображается как закрытая. Ее содержимое еще не известно игроку
     public static final int EMPTY_CELL=0;   //Ячейка отображается как пустая
     public static final int BOMB_CELL=9;    //Ячейка отображается, как ячейка с бомбой
+    public static final int FLAG_CELL=10;   //Ячейка помечена флажком
 
     private int x;                 //x-координата данной клетки
     private int y;                 //y-координата данной клетки
@@ -19,20 +21,26 @@ public class Cell extends JPanel{
     private Color lightBackColor =new Color(250,250,250);
     private Color bombBackColor=Color.RED;
     private Color bombColor=Color.BLACK;
+    private Color questColor=Color.RED;
 
-
-    //Конструктор
-    public Cell(int x, int y, int value) {
+    //Конструктор. По-умолчанию, ячейка создается как скрытая
+    public Cell(int x, int y) {
         this.x=x;
         this.y=y;
-        this.value=value;
+        this.value=HIDE_CELL;
         setBorder(BorderFactory.createLineBorder(borderColor));
     }
 
     //Метод устанавливает содержимое ячейки. В зависимости от него - меняется вид ячейки на экране
     public void setValue(int value){
+        if((value<HIDE_CELL) | (value>FLAG_CELL))return;
         this.value=value;
         repaint();
+    }
+
+    //Метод возвращает содержимое ячейки
+    public int getValue(){
+        return value;
     }
 
     public int getXCell() {
@@ -103,6 +111,18 @@ public class Cell extends JPanel{
                 yp[3]=(int)y[j+9];
                 g2.fillPolygon(xp,yp,4);
             }
+            return;
+        }
+        if(value==FLAG_CELL){
+            g2.setColor(darkBackColor);
+            g2.fillRect(0,0, w, h);
+            g2.setColor(lightBackColor);
+            g2.fillOval((int)(w*0.1),(int)(h*0.1),(int)(w*0.8),(int)(h*0.8));
+            g2.setColor(borderColor);
+            g2.drawOval((int)(w*0.1),(int)(h*0.1),(int)(w*0.8),(int)(h*0.8));
+            g2.setColor(questColor);
+            g2.setFont(new Font("Arial",Font.BOLD,(int)(w*0.7)));
+            g2.drawString("?",(int)(w*0.33),(int)(h*0.73));
             return;
         }
     }

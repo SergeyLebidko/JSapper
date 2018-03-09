@@ -17,7 +17,15 @@ public class MainClass{
     private final int cellH=36;                                     //Высота клетки (в пикселях)
     private final int correctionW=6;                                //Горизонтальная поправка высоты окна
     private final int correctionH=29;                               //Вертикальная поправка высоты окна
-    private final int BOMB=9;
+
+    //Предопределенные константы для ячеек массива field
+    private final int BOMB=9;                                       //Константа для обозначения ячеек-бомб
+    private final int EMPTY=0;                                      //Константа для обозначения пустых ячеек
+
+    //Предопределенные константы для текущих состояний игровой сессии
+    private final int START_STATE=0;                                //Игра началась, но первый ход еще не сделан. Необходима расстановка бомб
+    private final int CONTINUE_STATE=1;                             //Первый ход сделан, бомбы расставлены
+    private final int END_STATE=2;                                  //Игра окончена, ходы запрещены
 
     //Перечисление уровней сложности
     private enum Difficult{
@@ -34,61 +42,32 @@ public class MainClass{
     private int hCellCount;                                   //Высота окна (в клетках) для текущей игры
     private int bombCount;                                    //Количество бомб в текущей игровой сессии
     private Cell[][] cells;                                   //Массив клеток, которые будут отображаться на экране
-    private int[][] field;                                    //Модель игрового поля в программе
+    private int[][] field;                                    //Модель игрового поля в программе. Ячейки массива field могут принимать только значения BOMB и EMPTY
+    private int state;                                        //Текущее состояние игровой сессии
+    private int countOpenCells;                               //Количество открытых в текущей сессии ячеек
+    private int totalEmptyCells;                              //Количество пустых ячеек в текущей игровой сессии
 
     //Обработчик событий от мыши. Он реализует игровую логику
     private MouseAdapter game=new MouseAdapter() {
         @Override
         public void mouseClicked(MouseEvent e) {
             if(e.getClickCount()>1)return;        //Отсекаем двойные/тройные и т.д. клики...
-            if(e.getButton()==2)return;           //...и нажатия на колёсико
 
-            //Если нажата правая кнопка мышки, то выводим диалог с выбором уровня сложности
+            //Если нажата правая кнопка мышки, то в ячейке выставляем/снимаем флажок
             if(e.getButton()==3){
-                Box p=Box.createVerticalBox();
-                JRadioButton easyBtn=new JRadioButton("Легко");
-                JRadioButton mediumBtn=new JRadioButton("Средне");
-                JRadioButton hardBtn=new JRadioButton("Сложно");
-                ButtonGroup bg=new ButtonGroup();
-                bg.add(easyBtn);
-                bg.add(mediumBtn);
-                bg.add(hardBtn);
-                switch (currentDiff){
-                    case EASY:{
-                        easyBtn.setSelected(true);
-                        break;
-                    }
-                    case MEDIUM:{
-                        mediumBtn.setSelected(true);
-                        break;
-                    }
-                    case HARD:{
-                        hardBtn.setSelected(true);
-                        break;
-                    }
-                    default:{
-                        easyBtn.setSelected(true);
-                    }
-                }
-                p.add(easyBtn);
-                p.add(Box.createVerticalStrut(5));
-                p.add(mediumBtn);
-                p.add(Box.createVerticalStrut(5));
-                p.add(hardBtn);
-                JOptionPane.showMessageDialog(frm, p, "Выберите сложность",JOptionPane.QUESTION_MESSAGE);
-                if(easyBtn.isSelected())gamedInit(Difficult.EASY);
-                if(mediumBtn.isSelected())gamedInit(Difficult.MEDIUM);
-                if(hardBtn.isSelected())gamedInit(Difficult.HARD);
+                // ********** Вставить код **********
+            }
+
+            //Если нажата средняя кнопка мышки, то выводим диалог с выбором уровня сложности, затем начинаем новую игру
+            if(e.getButton()==2){
+                Difficult diff=showNewGameDialog();
+                gamedInit(diff);
                 return;
             }
 
-            //Если нажата левая кнопка мышки
+            //Если нажата левая кнопка мышки, то обрабатываем попытку открытия очередной клетки
             if(e.getButton()==1){
-                //Узнаем координаты ячейки, в которую кликнул игрок
-                Cell c=(Cell)(e.getSource());
-                int x=c.getXCell();
-                int y=c.getYCell();
-
+                // ********** Вставить код **********
             }
 
         }
@@ -107,6 +86,7 @@ public class MainClass{
     //Метод готовит новую игру в зависимости от выбранного уровня сложности
     private void gamedInit(Difficult diff){
         if(currentDiff!=diff){
+            currentDiff=diff;
             //Очищаем старое игровое поле
             if(cells!=null){
                 for(int i=0;i<hCellCount;i++)
@@ -147,7 +127,7 @@ public class MainClass{
             field=new int[hCellCount][wCellCount];
             for(int i=0;i<hCellCount;i++)
                 for(int j=0;j<wCellCount;j++){
-                    cells[i][j]=new Cell(j,i,Cell.HIDE_CELL);
+                    cells[i][j]=new Cell(j,i);
                     cells[i][j].addMouseListener(game);
                     frm.add(cells[i][j]);
                 }
@@ -156,47 +136,98 @@ public class MainClass{
         //Сбрасываем параметры ячеек игрового поля
         for(int i=0;i<hCellCount;i++)
             for(int j=0;j<wCellCount;j++){
-                field[i][j]=0;
+                field[i][j]=EMPTY;
                 cells[i][j].setValue(Cell.HIDE_CELL);
             }
 
-        currentDiff=diff;
+        state=START_STATE;
+        countOpenCells=0;
+        totalEmptyCells=(wCellCount*hCellCount)-bombCount;
     }
 
-    //Метод расставляет бомбы и подсчитывает количество бомб по соседству рядом с клетками, в которых самих бомб нет.
-    //Можно поставить бомбы во все ячейки, кроме ячейки x0,y0
-    private void makeField(int x0, int y0){
+    //Метод расставляет бомбы в ячейки игрового поля. При этом ячейка x0,y0 является запрещенной для установки бомбы
+    private void setBombs(int x0, int y0){
         int x;
         int y;
-        //Сперва расставляем бомбы
-        Random rnd=new Random();
-        for(int i=0;i<bombCount;i++){
-            do{
+        Random rnd;
+        rnd=new Random();
+        for (int i=0; i<bombCount;i++){
+            do {
                 x=rnd.nextInt(wCellCount);
                 y=rnd.nextInt(hCellCount);
-            }while (((x==x0) & (y==y0)) | (field[y0][x0]==BOMB));
-            field[y0][x0]=BOMB;
+            }while(((x==x0) & (y==y0)) | field[y][x]==BOMB);
+            field[y][x]=BOMB;
         }
-        //Теперь подсчитываем количество ячеек с бомбами для каждой пустой ячейки
-        for(int i=0;i<hCellCount;i++)
-            for(int j=0;j<wCellCount;j++){
-                if(field[i][j]==BOMB)continue;
-                for(int dx=-1;dx<2;dx++){
-                    for(int dy=-1;dy<2;dy++){
-                        if((dx==0) & (dy==0))continue;
-                        x=j+dx;
-                        y=i+dy;
-                        if((x<0) || (x>=wCellCount) || (y<0) || (y>=hCellCount))continue;
-                        if(field[y][x]==BOMB)continue;
-                        if(field[y][x]==BOMB)field[i][j]++;
-                    }
-                }
-            }
     }
 
-    //Метод открывает все пустые ячейки, начиная ячейки с координатами x0,y0
-    private void openVoidCells(int x0, int y0){
+    //Метод показывает все скрытые и помеченные флажком ячейки игрового поля
+    private void showAllHideCells(){
+        for (int i=0;i<hCellCount;i++)
+            for (int j=0;j<wCellCount;j++)
+                if((cells[i][j].getValue()==Cell.HIDE_CELL) | (cells[i][j].getValue()==Cell.FLAG_CELL)){
+                    if(field[i][j]==BOMB)cells[i][j].setValue(Cell.BOMB_CELL);
+                    if(field[i][j]==EMPTY){
+                        int val=getCountBombsAround(j,i);
+                        if(val==0)cells[i][j].setValue(Cell.EMPTY_CELL);
+                        if(val!=0)cells[i][j].setValue(val);
+                    }
+                }
+    }
 
+    //Метод возвращает количество бомб возле ячейки с координатами x0,y0
+    private int getCountBombsAround(int x0, int y0){
+        int count=0;
+        int x;
+        int y;
+        for (int dx=-1;dx<2;dx++)
+            for (int dy=-1;dy<2;dy++){
+                if ((dx==0) & (dy==0))continue;
+                x=x0+dx;
+                y=y0+dy;
+                if((x<0) | (y<0) | (x>=wCellCount) | (y>=hCellCount))continue;
+                if(field[y][x]!=BOMB)continue;
+                count++;
+            }
+        return count;
+    }
+
+    //Метод показывает диалог выбора сложности игры
+    private Difficult showNewGameDialog(){
+        Box p=Box.createVerticalBox();
+        JRadioButton easyBtn=new JRadioButton("Легко");
+        JRadioButton mediumBtn=new JRadioButton("Средне");
+        JRadioButton hardBtn=new JRadioButton("Сложно");
+        ButtonGroup bg=new ButtonGroup();
+        bg.add(easyBtn);
+        bg.add(mediumBtn);
+        bg.add(hardBtn);
+        switch (currentDiff){
+            case EASY:{
+                easyBtn.setSelected(true);
+                break;
+            }
+            case MEDIUM:{
+                mediumBtn.setSelected(true);
+                break;
+            }
+            case HARD:{
+                hardBtn.setSelected(true);
+                break;
+            }
+            default:{
+                easyBtn.setSelected(true);
+            }
+        }
+        p.add(easyBtn);
+        p.add(Box.createVerticalStrut(5));
+        p.add(mediumBtn);
+        p.add(Box.createVerticalStrut(5));
+        p.add(hardBtn);
+        JOptionPane.showMessageDialog(frm, p, "Выберите сложность",JOptionPane.QUESTION_MESSAGE);
+        if(easyBtn.isSelected())return Difficult.EASY;
+        if(mediumBtn.isSelected())return Difficult.MEDIUM;
+        if(hardBtn.isSelected())return Difficult.HARD;
+        return Difficult.EASY;
     }
 
     public static void main(String[] args) {
