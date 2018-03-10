@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.LinkedList;
 import java.util.Random;
 
 public class MainClass{
@@ -52,10 +53,21 @@ public class MainClass{
         @Override
         public void mouseClicked(MouseEvent e) {
             if(e.getClickCount()>1)return;        //Отсекаем двойные/тройные и т.д. клики...
+            //получаем координаты ячейки. в которую кликнул игрок
+            Cell c=(Cell)(e.getSource());
+            int x=c.getXCell();
+            int y=c.getYCell();
 
             //Если нажата правая кнопка мышки, то в ячейке выставляем/снимаем флажок
             if(e.getButton()==3){
-                // ********** Вставить код **********
+                if(cells[y][x].getValue()==Cell.HIDE_CELL){
+                    cells[y][x].setValue(Cell.FLAG_CELL);
+                    return;
+                }
+                if(cells[y][x].getValue()==Cell.FLAG_CELL){
+                    cells[y][x].setValue(Cell.HIDE_CELL);
+                    return;
+                }
             }
 
             //Если нажата средняя кнопка мышки, то выводим диалог с выбором уровня сложности, затем начинаем новую игру
@@ -169,7 +181,7 @@ public class MainClass{
                     if(field[i][j]==EMPTY){
                         int val=getCountBombsAround(j,i);
                         if(val==0)cells[i][j].setValue(Cell.EMPTY_CELL);
-                        if(val!=0)cells[i][j].setValue(val);
+                        if(val>0)cells[i][j].setValue(val);
                     }
                 }
     }
@@ -189,6 +201,71 @@ public class MainClass{
                 count++;
             }
         return count;
+    }
+
+    //Метод открывает все пустые ячейки, раположенные рядом с ячейкой x0,y0 (включая саму ячейку x0,y0). Возвращает количество открытых ячеек
+    //Метод также предполагает, что клетка x0,y0 изначально пуста
+    private int openEmptyCells(int x0, int y0){
+        int countOpenCells=0;
+        int val;
+        val=getCountBombsAround(x0,y0);
+
+        //Случай, когда исходная пустная клетка находится рядом с бомбой
+        if(val>0){
+            cells[y0][x0].setValue(val);
+            countOpenCells=1;
+        }
+
+        //Случай, когда рядом с клеткой нет бомб
+        if(val==0){
+            //Объявляем вспомотательный внутренний класс для хранения координат
+            class Coord{
+                int x;
+                int y;
+
+                public Coord(int x, int y) {
+                    this.x = x;
+                    this.y = y;
+                }
+            }
+            Coord c;
+            int x;
+            int y;
+            LinkedList<Coord> pool=new LinkedList<>();
+            pool.add(new Coord(x0,y0));
+            do {
+                //Извлекаем координаты очередной ячейки из пула
+                c=pool.poll();
+                val=getCountBombsAround(c.x,c.y);
+                if(val==0){
+                    cells[c.y][c.x].setValue(Cell.EMPTY_CELL);
+                    field[c.y][c.x]=-1;
+                    countOpenCells++;
+                }
+                if(val>0){
+                    cells[c.y][c.x].setValue(val);
+                    field[c.y][c.x]=-1;
+                    countOpenCells++;
+                    continue;
+                }
+                //Добавляем новые ячейки в пул
+                for (int dx=-1; dx<2;dx++)
+                    for (int dy=-1;dy<2;dy++){
+                        if((dx==0) & (dy==0))continue;
+                        x=c.x+dx;
+                        y=c.y+dy;
+                        if((x<0) | (x>=wCellCount) | (y<0) | (y>hCellCount))continue;
+                        if(field[y][x]==-1)continue;
+                        pool.add(new Coord(x,y));
+                    }
+            }while (!pool.isEmpty());
+            //Очищаем массив field от вспомогательных ячеек
+            for (int i=0;i<hCellCount;i++)
+                for (int j=0;j<wCellCount;j++)if(field[i][j]==-1)field[i][j]=0;
+        }
+
+        //Возвращаем количество открытых клеток
+        return countOpenCells;
     }
 
     //Метод показывает диалог выбора сложности игры
