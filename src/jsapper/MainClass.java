@@ -60,6 +60,8 @@ public class MainClass{
 
             //Если нажата правая кнопка мышки, то в ячейке выставляем/снимаем флажок
             if(e.getButton()==3){
+                //Если игра окончена, нажатия на правую и левую кнопки мыши не обрабатываются
+                if(state==END_STATE)return;
                 if(cells[y][x].getValue()==Cell.HIDE_CELL){
                     cells[y][x].setValue(Cell.FLAG_CELL);
                     return;
@@ -79,7 +81,39 @@ public class MainClass{
 
             //Если нажата левая кнопка мышки, то обрабатываем попытку открытия очередной клетки
             if(e.getButton()==1){
-                // ********** Вставить код **********
+                if(state==START_STATE){
+                    setBombs(x,y);
+                    state=CONTINUE_STATE;
+                }
+                if(state==CONTINUE_STATE){
+                    if(field[y][x]==BOMB){
+                        showAllHideCells();
+                        int answer=JOptionPane.showConfirmDialog(frm, "Вы проиграли... Хотите сыграть еще?", "Вы проиграли", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE,null);
+                        if(answer==JOptionPane.YES_OPTION){
+                            gamedInit(showNewGameDialog());
+                            return;
+                        }
+                        if(answer==JOptionPane.NO_OPTION)System.exit(0);
+                        if(answer==JOptionPane.CLOSED_OPTION)state=END_STATE;
+                        return;
+                    }
+                    if(field[y][x]==EMPTY){
+                        countOpenCells+=openEmptyCells(x,y);
+                        if(countOpenCells==totalEmptyCells){
+                            showAllHideCells();
+                            int answer=JOptionPane.showConfirmDialog(frm, "Вы победили! Хотите сыграть еще?", "Вы победили", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE,null);
+                            if(answer==JOptionPane.YES_OPTION){
+                                gamedInit(showNewGameDialog());
+                                return;
+                            }
+                            if(answer==JOptionPane.NO_OPTION)System.exit(0);
+                            if(answer==JOptionPane.CLOSED_OPTION)state=END_STATE;
+                            return;
+                        }
+                    }
+                }
+                //Если игра окончена, нажатия на правую и левую кнопки мыши не обрабатываются
+                if(state==END_STATE)return;
             }
 
         }
@@ -87,9 +121,12 @@ public class MainClass{
 
     //Формируем главное окно программы и выставляем его по центру экрана
     public MainClass() {
+        //Следующие две строки нужны для локализации диалоговых окон
+        UIManager.put("OptionPane.yesButtonText", "Да");
+        UIManager.put("OptionPane.noButtonText", "Нет");
+        //Создаем окно программы
         frm = new JFrame("Сапёр");
         frm.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frm.setIconImage(new ImageIcon("logo.png").getImage());
         frm.getContentPane().setBackground(backWindowColor);
         frm.setResizable(false);
         frm.setVisible(true);
@@ -111,19 +148,19 @@ public class MainClass{
                 case EASY:{
                     wCellCount=10;
                     hCellCount=10;
-                    bombCount=6;
+                    bombCount=10;
                     break;
                 }
                 case MEDIUM:{
                     wCellCount=15;
                     hCellCount=10;
-                    bombCount=11;
+                    bombCount=17;
                     break;
                 }
                 case HARD:{
                     wCellCount=20;
                     hCellCount=15;
-                    bombCount=16;
+                    bombCount=30;
                 }
             }
             //Изменяем размер окна согласно размеру игрового поля и центрируем его на экране
@@ -206,14 +243,14 @@ public class MainClass{
     //Метод открывает все пустые ячейки, раположенные рядом с ячейкой x0,y0 (включая саму ячейку x0,y0). Возвращает количество открытых ячеек
     //Метод также предполагает, что клетка x0,y0 изначально пуста
     private int openEmptyCells(int x0, int y0){
-        int countOpenCells=0;
+        int countCells=0;
         int val;
         val=getCountBombsAround(x0,y0);
 
         //Случай, когда исходная пустная клетка находится рядом с бомбой
         if(val>0){
             cells[y0][x0].setValue(val);
-            countOpenCells=1;
+            countCells=1;
         }
 
         //Случай, когда рядом с клеткой нет бомб
@@ -240,12 +277,12 @@ public class MainClass{
                 if(val==0){
                     cells[c.y][c.x].setValue(Cell.EMPTY_CELL);
                     field[c.y][c.x]=-1;
-                    countOpenCells++;
+                    countCells++;
                 }
                 if(val>0){
                     cells[c.y][c.x].setValue(val);
                     field[c.y][c.x]=-1;
-                    countOpenCells++;
+                    countCells++;
                     continue;
                 }
                 //Добавляем новые ячейки в пул
@@ -254,9 +291,10 @@ public class MainClass{
                         if((dx==0) & (dy==0))continue;
                         x=c.x+dx;
                         y=c.y+dy;
-                        if((x<0) | (x>=wCellCount) | (y<0) | (y>hCellCount))continue;
+                        if((x<0) | (x>=wCellCount) | (y<0) | (y>=hCellCount))continue;
                         if(field[y][x]==-1)continue;
                         pool.add(new Coord(x,y));
+                        field[y][x]=-1;
                     }
             }while (!pool.isEmpty());
             //Очищаем массив field от вспомогательных ячеек
@@ -265,7 +303,7 @@ public class MainClass{
         }
 
         //Возвращаем количество открытых клеток
-        return countOpenCells;
+        return countCells;
     }
 
     //Метод показывает диалог выбора сложности игры
