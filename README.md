@@ -6,4 +6,4 @@
 
 ![screenshot](saper_1.jpg)
 
-![screenshot](saper_2.jpg)
+![screenshot](saper_2.png)
